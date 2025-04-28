@@ -2,7 +2,6 @@ package com.example.pruebatecnicajuandavid.screens
 
 import android.Manifest
 import android.content.Context
-import android.content.Intent
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.navigation.NavHostController
 import com.example.pruebatecnicajuandavid.R
 import com.example.pruebatecnicajuandavid.data.AppDatabase
 import com.example.pruebatecnicajuandavid.repository.PointRepository
@@ -25,14 +25,15 @@ import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.*
 import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.location
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen() {
+fun MapScreen(
+    navController: NavHostController,
+    lat: Double? = null,
+    lon: Double? = null
+) {
     val context = LocalContext.current
     val database = AppDatabase.getDatabase(context)
     val repository = PointRepository(database.favoritePointDao())
@@ -55,18 +56,21 @@ fun MapScreen() {
     LaunchedEffect(Unit) { permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
 
     Scaffold(
-        floatingActionButton = { MapActions(mapView, userLocation, currentStyle) { currentStyle = it } }
+        floatingActionButton = { MapActions(navController, mapView, userLocation, currentStyle) { currentStyle = it } }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
             AndroidView(factory = { ctx ->
                 MapView(ctx).apply {
                     mapView = this
+
                     setupMap(this, context, repository, pulsatingSize, alertaPoints, scope) { manager ->
                         pointAnnotationManager = manager
                     }
+
                     location.addOnIndicatorPositionChangedListener { pos ->
                         userLocation = Point.fromLngLat(pos.longitude(), pos.latitude())
                     }
+
                     gestures.addOnMapClickListener { point ->
                         clickedPoint = point
                         showDialog = true
@@ -74,6 +78,18 @@ fun MapScreen() {
                     }
                 }
             }, modifier = Modifier.fillMaxSize())
+
+            // Centrar automáticamente si vienen coordenadas
+            LaunchedEffect(lat, lon, mapView) {
+                if (lat != null && lon != null && mapView != null) {
+                    mapView?.getMapboxMap()?.setCamera(
+                        CameraOptions.Builder()
+                            .center(Point.fromLngLat(lon, lat))
+                            .zoom(14.0)
+                            .build()
+                    )
+                }
+            }
 
             if (showDialog && clickedPoint != null) {
                 AddPointDialog(
@@ -96,13 +112,12 @@ fun MapScreen() {
 
 @Composable
 private fun MapActions(
+    navController: NavHostController,
     mapView: MapView?,
     userLocation: Point?,
     currentStyle: String,
     onStyleChange: (String) -> Unit
 ) {
-    val context = LocalContext.current
-
     Column {
         FloatingActionButton(onClick = {
             mapView?.getMapboxMap()?.loadStyleUri(
@@ -126,7 +141,7 @@ private fun MapActions(
         }
 
         FloatingActionButton(onClick = {
-            context.startActivity(Intent(context, FavoritesScreen::class.java))
+            navController.navigate("favorites")
         }) {
             Text("★")
         }

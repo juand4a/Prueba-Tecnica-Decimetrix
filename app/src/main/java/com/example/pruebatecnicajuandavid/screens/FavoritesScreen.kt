@@ -1,36 +1,26 @@
 package com.example.pruebatecnicajuandavid.screens
 
-
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.example.pruebatecnicajuandavid.data.AppDatabase
 import com.example.pruebatecnicajuandavid.repository.PointRepository
 import com.example.pruebatecnicajuandavid.components.FavoriteCard
-import kotlinx.coroutines.launch
 
-class FavoritesScreen : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val database = AppDatabase.getDatabase(applicationContext)
-        val repository = PointRepository(database.favoritePointDao())
+@Composable
+fun FavoritesScreen(navController: NavHostController) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val database = AppDatabase.getDatabase(context)
+    val repository = PointRepository(database.favoritePointDao())
 
-        setContent {
-            FavoritesScreenContent(repository)
-        }
-    }
+    FavoritesScreenContent(repository = repository, navController = navController)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FavoritesScreenContent(repository: PointRepository) {
+fun FavoritesScreenContent(repository: PointRepository, navController: NavHostController) {
     val scope = rememberCoroutineScope()
     var favorites by remember { mutableStateOf<List<com.example.pruebatecnicajuandavid.data.FavoritePoint>>(emptyList()) }
 
@@ -42,13 +32,15 @@ fun FavoritesScreenContent(repository: PointRepository) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Favoritos") }
+                title = { Text("Favoritos(Presiona la carta para ir a la ubicacion que deseas)") }
             )
         }
     ) { paddingValues ->
         LazyColumn(contentPadding = paddingValues) {
             items(favorites) { favorite ->
-                FavoriteCard(favorite)
+                FavoriteCard(point = favorite) {
+                    navController.navigate("home/${favorite.latitude}/${favorite.longitude}")
+                }
             }
         }
     }

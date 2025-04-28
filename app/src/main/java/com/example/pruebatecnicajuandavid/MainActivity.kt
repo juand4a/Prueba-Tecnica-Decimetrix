@@ -14,9 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.*
+import androidx.navigation.navArgument
+import com.example.pruebatecnicajuandavid.screens.FavoritesScreen
 import com.example.pruebatecnicajuandavid.screens.MapScreen
 import com.example.pruebatecnicajuandavid.ui.theme.PruebaTecnicaJuandavidTheme
 
@@ -38,7 +42,19 @@ fun AppNavigator() {
 
     NavHost(navController = navController, startDestination = "intro") {
         composable("intro") { IntroScreen(navController) }
-        composable("home") { MapScreen() }
+        composable("home") { MapScreen(navController) }
+        composable(
+            route = "home/{lat}/{lon}",
+            arguments = listOf(
+                navArgument("lat") { type = NavType.StringType },
+                navArgument("lon") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull()
+            val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull()
+            MapScreen(navController, lat, lon)
+        }
+        composable("favorites") { FavoritesScreen(navController) }
     }
 }
 
@@ -55,9 +71,8 @@ fun IntroScreen(navController: NavHostController) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Imagen tuya (deberías tener un recurso drawable por ejemplo "ic_profile")
             Image(
-                painter = painterResource(id = R.drawable.fotoperfil), // <- debes poner tu imagen en drawable
+                painter = painterResource(id = R.drawable.fotoperfil),
                 contentDescription = "Foto de perfil",
                 modifier = Modifier
                     .size(150.dp)
@@ -73,10 +88,9 @@ fun IntroScreen(navController: NavHostController) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Desarrollador móvil junior .\n\nEsta es mi prueba técnica para Decimetrix®.",
+                text = "Desarrollador móvil junior.\n\nEsta es mi prueba técnica para Decimetrix®.",
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 16.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(32.dp))
