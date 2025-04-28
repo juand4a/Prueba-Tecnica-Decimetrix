@@ -26,3 +26,6 @@ Este proyecto es el resultado de la prueba técnica solicitada por **Decimetrix�
 -Desarrollador Móvil Android | Kotlin
 -📧 Contacto: [juandavidlopezp2004@gmail.com]
 -🌐 LinkedIn: [www.linkedin.com/in/juan-david-lopez-patiño-dev]
+
+
+# Usar el codigo desde la rama master si por algun motivo lo va a clonar
